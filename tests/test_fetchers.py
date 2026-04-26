@@ -402,10 +402,11 @@ class TestChesscomFetch:
         mock_client = create_mock_client(handler)
         monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: mock_client)
 
-        await chesscom.fetch("TestUser")
+        await chesscom.fetch(" TestUser ")
 
         assert "testuser" in captured_urls[0]
         assert "TestUser" not in captured_urls[0]
+        assert "%20" not in captured_urls[0]
 
     async def test_max_games_returns_most_recent(self, monkeypatch: pytest.MonkeyPatch):
         """With max_games, should return the most recent games, not oldest."""

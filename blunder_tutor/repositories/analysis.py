@@ -393,10 +393,14 @@ class AnalysisRepository(BaseDbRepository):
         tactical_patterns: list[int] | None = None,
         player_colors: list[int] | None = None,
         game_types: list[int] | None = None,
+        source: str | None = None,
+        username: str | None = None,
     ) -> list[dict[str, object]]:
-        """Fetch blunders with optional filtering by phase, tactical pattern, color, and game type.
+        """Fetch blunders with optional filtering by chess profile and puzzle facets.
 
         Args:
+            source: Filter by imported game source
+            username: Filter by imported chess username
             game_phases: Filter by game phase (0=opening, 1=middlegame, 2=endgame)
             tactical_patterns: Filter by tactical pattern
             player_colors: Filter by player color (0=white, 1=black)
@@ -406,6 +410,14 @@ class AnalysisRepository(BaseDbRepository):
         conn = await self.get_connection()
         conditions = ["am.classification = ?"]
         params: list = [CLASSIFICATION_BLUNDER]
+
+        if source:
+            conditions.append("g.source = ?")
+            params.append(source)
+
+        if username:
+            conditions.append("g.username = ?")
+            params.append(username)
 
         if game_phases:
             placeholders = ",".join("?" * len(game_phases))

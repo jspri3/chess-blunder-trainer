@@ -25,6 +25,16 @@ export interface ApiErrorResponse {
   error?: string;
 }
 
+export interface ChessProfile {
+  source: string | null;
+  username: string;
+  total_games: number;
+  analyzed_games: number;
+  pending_games: number;
+  oldest_game_date?: string | null;
+  newest_game_date?: string | null;
+}
+
 export type JobState = 'idle' | 'running' | 'completed' | 'failed';
 
 export interface JobStatus {

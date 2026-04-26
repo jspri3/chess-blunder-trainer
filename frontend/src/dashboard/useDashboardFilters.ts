@@ -1,8 +1,14 @@
-import { useState, useCallback } from 'preact/hooks';
+import { useState, useCallback, useEffect } from 'preact/hooks';
 import type { DateFilterParams, DatePreset } from './types';
 import { GAME_TYPES, GAME_PHASES } from '../shared/constants';
 import { STORAGE_KEYS } from '../shared/storage-keys';
 import { loadFromStorage } from '../hooks/useFilterPersistence';
+import {
+  loadSelectedProfile,
+  onSelectedProfileChange,
+  selectedProfileParams,
+  type SelectedProfile,
+} from '../shared/profile-selection';
 
 const DATE_STORAGE_KEY = STORAGE_KEYS.dashboardDate;
 const GAME_TYPE_STORAGE_KEY = STORAGE_KEYS.dashboardGameTypes;
@@ -59,6 +65,9 @@ export function useDashboardFilters(): DashboardFiltersResult {
   const [dateState, setDateState] = useState<DateState>(loadDateState);
   const [gameTypes, setGameTypesState] = useState(() => loadFromStorage(GAME_TYPE_STORAGE_KEY, GAME_TYPES));
   const [gamePhases, setGamePhasesState] = useState(() => loadFromStorage(GAME_PHASE_STORAGE_KEY, GAME_PHASES));
+  const [profile, setProfile] = useState<SelectedProfile>(loadSelectedProfile);
+
+  useEffect(() => onSelectedProfileChange(setProfile), []);
 
   const setDatePreset = useCallback((preset: DatePreset) => {
     const dates = getPresetDates(preset);
@@ -87,7 +96,7 @@ export function useDashboardFilters(): DashboardFiltersResult {
   }, []);
 
   const getParams = useCallback((): DateFilterParams => {
-    const params: DateFilterParams = {};
+    const params: DateFilterParams = { ...selectedProfileParams(profile) };
     if (dateState.from) params.start_date = dateState.from;
     if (dateState.to) params.end_date = dateState.to;
     if (gameTypes.length > 0 && gameTypes.length < GAME_TYPES.length) {
@@ -97,7 +106,7 @@ export function useDashboardFilters(): DashboardFiltersResult {
       params.game_phases = gamePhases;
     }
     return params;
-  }, [dateState, gameTypes, gamePhases]);
+  }, [dateState, gameTypes, gamePhases, profile]);
 
   return {
     datePreset: dateState.preset,

@@ -46,12 +46,22 @@ def _build_stats_filter(
         list[str] | None,
         Query(description="Filter by game phases (opening, middlegame, endgame)"),
     ] = None,
+    source: Annotated[
+        str | None,
+        Query(description="Filter by imported chess platform source"),
+    ] = None,
+    username: Annotated[
+        str | None,
+        Query(description="Filter by imported chess username"),
+    ] = None,
 ) -> StatsFilter:
     return StatsFilter(
         start_date=start_date.isoformat() if start_date else None,
         end_date=end_date.isoformat() if end_date else None,
         game_types=_parse_string_list(game_types, GAME_TYPE_FROM_STRING),
         game_phases=_parse_string_list(game_phases, PHASE_FROM_STRING),
+        source=source,
+        username=username,
     )
 
 
@@ -304,7 +314,7 @@ async def get_dashboard_stats(
     summary="Get game breakdown",
     description="Returns game statistics grouped by source and/or username with optional filtering.",
 )
-@cached(tag="stats", ttl=300, version=1, key_params=["source"])
+@cached(tag="stats", ttl=300, version=1, key_params=["source", "username"])
 async def get_game_breakdown(
     request: Request,
     stats_repo: StatsRepoDep,
@@ -312,8 +322,12 @@ async def get_game_breakdown(
         str | None,
         Query(description="Filter by game source (e.g., 'lichess', 'chesscom')"),
     ] = None,
+    username: Annotated[
+        str | None,
+        Query(description="Filter by imported chess username"),
+    ] = None,
 ) -> dict[str, Any]:
-    breakdown = await stats_repo.get_game_breakdown(source=source)
+    breakdown = await stats_repo.get_game_breakdown(source=source, username=username)
     return {"items": breakdown}
 
 
@@ -348,12 +362,20 @@ async def get_analysis_progress(stats_repo: StatsRepoDep) -> dict[str, Any]:
     summary="Get training statistics",
     description="Returns puzzle training statistics including attempts and accuracy.",
 )
-@cached(tag="training", ttl=300, version=1, key_params=[])
+@cached(tag="training", ttl=300, version=1, key_params=["source", "username"])
 async def get_training_stats(
     request: Request,
     attempt_repo: PuzzleAttemptRepoDep,
+    source: Annotated[
+        str | None,
+        Query(description="Filter by imported chess platform source"),
+    ] = None,
+    username: Annotated[
+        str | None,
+        Query(description="Filter by imported chess username"),
+    ] = None,
 ) -> TrainingStats:
-    stats = await attempt_repo.get_user_stats()
+    stats = await attempt_repo.get_user_stats(source=source, username=username)
 
     return TrainingStats(**stats)
 
@@ -382,7 +404,7 @@ async def get_training_stats_html(
     summary="Get puzzle activity heatmap data",
     description="Returns daily puzzle attempt counts for rendering a GitHub-style activity heatmap.",
 )
-@cached(tag="training", ttl=300, version=1, key_params=["days"])
+@cached(tag="training", ttl=300, version=1, key_params=["days", "source", "username"])
 async def get_activity_heatmap(
     request: Request,
     attempt_repo: PuzzleAttemptRepoDep,
@@ -390,8 +412,20 @@ async def get_activity_heatmap(
         int,
         Query(ge=30, le=365, description="Number of days to include"),
     ] = 365,
+    source: Annotated[
+        str | None,
+        Query(description="Filter by imported chess platform source"),
+    ] = None,
+    username: Annotated[
+        str | None,
+        Query(description="Filter by imported chess username"),
+    ] = None,
 ) -> dict[str, Any]:
-    daily_counts = await attempt_repo.get_daily_attempt_counts(days)
+    daily_counts = await attempt_repo.get_daily_attempt_counts(
+        days,
+        source=source,
+        username=username,
+    )
 
     max_count = max((d["total"] for d in daily_counts.values()), default=0)
     total_attempts = sum(d["total"] for d in daily_counts.values())

@@ -64,14 +64,29 @@ class GameRepository(BaseDbRepository):
 
         return inserted
 
-    async def get_all_game_side_map(self) -> dict[str, int]:
+    async def get_all_game_side_map(
+        self,
+        source: str | None = None,
+        username: str | None = None,
+    ) -> dict[str, int]:
         """Build a side map for every game using the stored ``username`` column."""
         game_map: dict[str, int] = {}
 
+        query = """
+            SELECT game_id, username, white, black
+            FROM game_index_cache
+            WHERE 1=1
+        """
+        params: list[str] = []
+        if source:
+            query += " AND source = ?"
+            params.append(source)
+        if username:
+            query += " AND username = ?"
+            params.append(username)
+
         conn = await self.get_connection()
-        async with conn.execute(
-            "SELECT game_id, username, white, black FROM game_index_cache"
-        ) as cursor:
+        async with conn.execute(query, params) as cursor:
             rows = await cursor.fetchall()
 
         for game_id, username, white, black in rows:
@@ -84,6 +99,42 @@ class GameRepository(BaseDbRepository):
                 game_map[game_id] = 1
 
         return game_map
+
+    async def list_profiles(self) -> list[dict[str, object]]:
+        query = """
+            SELECT
+                source,
+                username,
+                COUNT(*) as total_games,
+                SUM(CASE WHEN analyzed = 1 THEN 1 ELSE 0 END) as analyzed_games,
+                MIN(end_time_utc) as oldest_game_date,
+                MAX(end_time_utc) as newest_game_date
+            FROM game_index_cache
+            WHERE username IS NOT NULL AND username != ''
+            GROUP BY source, username
+            ORDER BY LOWER(source), LOWER(username)
+        """
+
+        conn = await self.get_connection()
+        async with conn.execute(query) as cursor:
+            rows = await cursor.fetchall()
+
+        profiles = []
+        for row in rows:
+            analyzed_games = int(row[3]) if row[3] is not None else 0
+            total_games = int(row[2])
+            profiles.append(
+                {
+                    "source": row[0],
+                    "username": row[1],
+                    "total_games": total_games,
+                    "analyzed_games": analyzed_games,
+                    "pending_games": total_games - analyzed_games,
+                    "oldest_game_date": row[4],
+                    "newest_game_date": row[5],
+                }
+            )
+        return profiles
 
     async def list_games(
         self,

@@ -141,6 +141,44 @@ class TestGetAllGameSideMap:
         result = await game_repo.get_all_game_side_map()
         assert "g1" not in result
 
+    async def test_profile_filters(self, game_repo: GameRepository):
+        await game_repo.insert_games(
+            [
+                _game(id="g1", source="lichess", username="alice", white="alice"),
+                _game(id="g2", source="chesscom", username="bob", white="bob"),
+            ]
+        )
+
+        result = await game_repo.get_all_game_side_map(
+            source="chesscom",
+            username="bob",
+        )
+
+        assert result == {"g2": 0}
+
+
+class TestListProfiles:
+    async def test_empty(self, game_repo: GameRepository):
+        assert await game_repo.list_profiles() == []
+
+    async def test_groups_by_source_and_username(self, game_repo: GameRepository):
+        await game_repo.insert_games(
+            [
+                _game(id="g1", source="lichess", username="alice", white="alice"),
+                _game(id="g2", source="lichess", username="alice", white="alice"),
+                _game(id="g3", source="chesscom", username="bob", white="bob"),
+            ]
+        )
+        await game_repo.mark_game_analyzed("g1")
+
+        profiles = await game_repo.list_profiles()
+        by_key = {(p["source"], p["username"]): p for p in profiles}
+
+        assert by_key[("lichess", "alice")]["total_games"] == 2
+        assert by_key[("lichess", "alice")]["analyzed_games"] == 1
+        assert by_key[("lichess", "alice")]["pending_games"] == 1
+        assert by_key[("chesscom", "bob")]["total_games"] == 1
+
 
 class TestGetPgnContentAndLoadGame:
     async def test_get_pgn_content(self, game_repo: GameRepository):

@@ -114,16 +114,44 @@ class PuzzleAttemptRepository(BaseDbRepository):
             "last_correct_at": row[2],
         }
 
-    async def get_user_stats(self) -> dict[str, object]:
+    def _profile_scope(
+        self,
+        source: str | None,
+        username: str | None,
+    ) -> tuple[str, str, list[str]]:
+        join_clause = ""
+        where_clause = "WHERE 1=1"
+        params: list[str] = []
+
+        if source or username:
+            join_clause = "JOIN game_index_cache g ON pa.game_id = g.game_id"
+        if source:
+            where_clause += " AND g.source = ?"
+            params.append(source)
+        if username:
+            where_clause += " AND g.username = ?"
+            params.append(username)
+
+        return join_clause, where_clause, params
+
+    async def get_user_stats(
+        self,
+        source: str | None = None,
+        username: str | None = None,
+    ) -> dict[str, object]:
+        join_clause, where_clause, params = self._profile_scope(source, username)
         conn = await self.get_connection()
         async with conn.execute(
-            """
+            f"""
             SELECT
                 COUNT(*) as total_attempts,
                 SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct_attempts,
-                COUNT(DISTINCT game_id || '-' || ply) as unique_puzzles
-            FROM puzzle_attempts
-            """
+                COUNT(DISTINCT pa.game_id || '-' || pa.ply) as unique_puzzles
+            FROM puzzle_attempts pa
+            {join_clause}
+            {where_clause}
+            """,
+            params,
         ) as cursor:
             row = await cursor.fetchone()
 
@@ -147,40 +175,55 @@ class PuzzleAttemptRepository(BaseDbRepository):
             "accuracy": round((correct / total * 100), 1) if total > 0 else 0.0,
         }
 
-    async def get_failure_rates_by_pattern(self) -> dict[int | None, float]:
+    async def get_failure_rates_by_pattern(
+        self,
+        source: str | None = None,
+        username: str | None = None,
+    ) -> dict[int | None, float]:
+        profile_join, profile_where, params = self._profile_scope(source, username)
         conn = await self.get_connection()
         async with conn.execute(
-            """
+            f"""
             SELECT am.tactical_pattern,
                    COUNT(*) as attempts,
                    SUM(CASE WHEN pa.was_correct = 0 THEN 1 ELSE 0 END) as failures
             FROM puzzle_attempts pa
             JOIN analysis_moves am ON pa.game_id = am.game_id AND pa.ply = am.ply
+            {profile_join}
+            {profile_where}
             GROUP BY am.tactical_pattern
-            """
+            """,
+            params,
         ) as cursor:
             rows = await cursor.fetchall()
 
         return {row[0]: row[2] / row[1] if row[1] > 0 else 0.0 for row in rows}
 
     async def get_daily_attempt_counts(
-        self, days: int = 365
+        self,
+        days: int = 365,
+        source: str | None = None,
+        username: str | None = None,
     ) -> dict[str, dict[str, int]]:
         cutoff_date = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+        join_clause, where_clause, params = self._profile_scope(source, username)
+        where_clause += " AND DATE(pa.attempted_at) >= ?"
+        params.append(cutoff_date)
 
         conn = await self.get_connection()
         async with conn.execute(
-            """
+            f"""
             SELECT
-                DATE(attempted_at) as date,
+                DATE(pa.attempted_at) as date,
                 COUNT(*) as total,
-                SUM(CASE WHEN was_correct = 1 THEN 1 ELSE 0 END) as correct
-            FROM puzzle_attempts
-            WHERE DATE(attempted_at) >= ?
-            GROUP BY DATE(attempted_at)
+                SUM(CASE WHEN pa.was_correct = 1 THEN 1 ELSE 0 END) as correct
+            FROM puzzle_attempts pa
+            {join_clause}
+            {where_clause}
+            GROUP BY DATE(pa.attempted_at)
             ORDER BY date
             """,
-            (cutoff_date,),
+            params,
         ) as cursor:
             rows = await cursor.fetchall()
 

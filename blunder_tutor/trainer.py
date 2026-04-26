@@ -59,6 +59,8 @@ class Trainer:
 
     async def pick_random_blunder(
         self,
+        source: str | None = None,
+        username: str | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         exclude_recently_solved: bool = True,
@@ -69,7 +71,10 @@ class Trainer:
         player_colors: list[int] | None = None,
         difficulty_ranges: list[tuple[int, int]] | None = None,
     ) -> BlunderPuzzle:
-        merged_game_side_map = await self.games.get_all_game_side_map()
+        merged_game_side_map = await self.games.get_all_game_side_map(
+            source=source,
+            username=username,
+        )
 
         if not merged_game_side_map:
             raise ValueError("No games found.")
@@ -79,6 +84,8 @@ class Trainer:
             tactical_patterns=tactical_patterns,
             player_colors=player_colors,
             game_types=game_types,
+            source=source,
+            username=username,
         )
         candidates = filter_blunders(blunders, merged_game_side_map)
 
@@ -126,7 +133,11 @@ class Trainer:
         if not candidates:
             raise ValueError("No blunders found.")
 
-        weights = await self._compute_weights(candidates)
+        weights = await self._compute_weights(
+            candidates,
+            source=source,
+            username=username,
+        )
         blunder = random.choices(candidates, weights=weights, k=1)[0]
         game_id = str(blunder["game_id"])
         ply = int(blunder["ply"])
@@ -260,8 +271,13 @@ class Trainer:
     async def _compute_weights(
         self,
         candidates: list[dict[str, object]],
+        source: str | None = None,
+        username: str | None = None,
     ) -> list[float]:
-        failure_rates = await self.attempts.get_failure_rates_by_pattern()
+        failure_rates = await self.attempts.get_failure_rates_by_pattern(
+            source=source,
+            username=username,
+        )
         has_history = bool(failure_rates)
 
         weights = []

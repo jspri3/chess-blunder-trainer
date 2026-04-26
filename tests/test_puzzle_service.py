@@ -119,6 +119,8 @@ class TestGetPuzzleWithAnalysis:
         )
 
         mock_trainer.pick_random_blunder.assert_called_once_with(
+            source=None,
+            username=None,
             start_date="2024-01-01",
             end_date="2024-12-31",
             exclude_recently_solved=True,
@@ -128,6 +130,29 @@ class TestGetPuzzleWithAnalysis:
             game_types=[2],
             player_colors=[0],
             difficulty_ranges=[(20, 60)],
+        )
+
+    async def test_passes_profile_filters(self, puzzle_service, mock_trainer):
+        puzzle = _make_puzzle()
+        mock_trainer.pick_random_blunder = AsyncMock(return_value=puzzle)
+
+        await puzzle_service.get_puzzle_with_analysis(
+            source="chesscom",
+            username="junior",
+        )
+
+        mock_trainer.pick_random_blunder.assert_called_once_with(
+            source="chesscom",
+            username="junior",
+            start_date=None,
+            end_date=None,
+            exclude_recently_solved=True,
+            spaced_repetition_days=30,
+            game_phases=None,
+            tactical_patterns=None,
+            game_types=None,
+            player_colors=None,
+            difficulty_ranges=None,
         )
 
 

@@ -16,12 +16,12 @@ from blunder_tutor.utils.explanation import generate_explanation, resolve_explan
 from blunder_tutor.web.api.schemas import ErrorResponse
 from blunder_tutor.web.dependencies import (
     AnalysisServiceDep,
-    ConfigDep,
     EngineThrottleDep,
     EventBusDep,
     PuzzleAttemptRepoDep,
     PuzzleServiceDep,
     SettingsRepoDep,
+    UserContextDep,
 )
 
 
@@ -229,6 +229,14 @@ async def puzzle(
         list[DifficultyEnum] | None,
         Query(description="Filter by difficulty (easy, medium, hard)"),
     ] = None,
+    source: Annotated[
+        str | None,
+        Query(description="Filter by imported chess platform source"),
+    ] = None,
+    username: Annotated[
+        str | None,
+        Query(description="Filter by imported chess username"),
+    ] = None,
 ) -> dict[str, Any]:
     start_date_str = start_date.isoformat() if start_date else None
     end_date_str = end_date.isoformat() if end_date else None
@@ -262,6 +270,8 @@ async def puzzle(
 
     try:
         puzzle_with_analysis = await puzzle_service.get_puzzle_with_analysis(
+            source=source,
+            username=username,
             start_date=start_date_str,
             end_date=end_date_str,
             exclude_recently_solved=True,
@@ -423,7 +433,7 @@ async def submit(
     attempt_repo: PuzzleAttemptRepoDep,
     analysis_service: AnalysisServiceDep,
     event_bus: EventBusDep,
-    config: ConfigDep,
+    user_ctx: UserContextDep,
     _throttle: EngineThrottleDep,
 ) -> dict[str, Any]:
     try:
@@ -458,7 +468,7 @@ async def submit(
     )
 
     training_event = TrainingEvent.create_training_updated(
-        user_key=config.username or "default"
+        user_key=str(user_ctx.user_id),
     )
     await event_bus.publish(training_event)
 

@@ -4,6 +4,23 @@ from blunder_tutor.repositories.base import BaseDbRepository
 
 
 class TrapRepository(BaseDbRepository):
+    def _profile_scope(
+        self,
+        source: str | None,
+        username: str | None,
+    ) -> tuple[str, list[str]]:
+        where_clause = "WHERE 1=1"
+        params: list[str] = []
+
+        if source:
+            where_clause += " AND g.source = ?"
+            params.append(source)
+        if username:
+            where_clause += " AND g.username = ?"
+            params.append(username)
+
+        return where_clause, params
+
     async def save_trap_match(
         self,
         *,
@@ -31,21 +48,29 @@ class TrapRepository(BaseDbRepository):
                 ),
             )
 
-    async def get_trap_stats(self) -> list[dict]:
+    async def get_trap_stats(
+        self,
+        source: str | None = None,
+        username: str | None = None,
+    ) -> list[dict]:
+        where_clause, params = self._profile_scope(source, username)
         conn = await self.get_connection()
         async with conn.execute(
-            """
+            f"""
             SELECT
-                trap_id,
-                SUM(CASE WHEN match_type = 'entered' THEN 1 ELSE 0 END) as entered,
-                SUM(CASE WHEN match_type = 'sprung' AND user_was_victim = 1 THEN 1 ELSE 0 END) as sprung,
-                SUM(CASE WHEN match_type = 'executed' THEN 1 ELSE 0 END) as executed,
+                tm.trap_id,
+                SUM(CASE WHEN tm.match_type = 'entered' THEN 1 ELSE 0 END) as entered,
+                SUM(CASE WHEN tm.match_type = 'sprung' AND tm.user_was_victim = 1 THEN 1 ELSE 0 END) as sprung,
+                SUM(CASE WHEN tm.match_type = 'executed' THEN 1 ELSE 0 END) as executed,
                 COUNT(*) as total,
-                MAX(created_at) as last_seen
-            FROM trap_matches
-            GROUP BY trap_id
+                MAX(tm.created_at) as last_seen
+            FROM trap_matches tm
+            JOIN game_index_cache g ON tm.game_id = g.game_id
+            {where_clause}
+            GROUP BY tm.trap_id
             ORDER BY sprung DESC, entered DESC
-            """
+            """,
+            params,
         ) as cursor:
             rows = await cursor.fetchall()
 
@@ -61,20 +86,28 @@ class TrapRepository(BaseDbRepository):
             for row in rows
         ]
 
-    async def get_trap_history(self, trap_id: str) -> list[dict]:
+    async def get_trap_history(
+        self,
+        trap_id: str,
+        source: str | None = None,
+        username: str | None = None,
+    ) -> list[dict]:
+        where_clause, params = self._profile_scope(source, username)
+        params.append(trap_id)
         conn = await self.get_connection()
         async with conn.execute(
-            """
+            f"""
             SELECT
                 tm.game_id, tm.match_type, tm.user_was_victim, tm.mistake_ply,
                 tm.created_at, g.white, g.black, g.result, g.date, g.source,
                 g.pgn_content
             FROM trap_matches tm
             JOIN game_index_cache g ON tm.game_id = g.game_id
-            WHERE tm.trap_id = ?
+            {where_clause}
+            AND tm.trap_id = ?
             ORDER BY tm.created_at DESC
             """,
-            (trap_id,),
+            params,
         ) as cursor:
             rows = await cursor.fetchall()
 
@@ -95,30 +128,41 @@ class TrapRepository(BaseDbRepository):
             for row in rows
         ]
 
-    async def get_trap_summary(self) -> dict:
+    async def get_trap_summary(
+        self,
+        source: str | None = None,
+        username: str | None = None,
+    ) -> dict:
         conn = await self.get_connection()
+        where_clause, params = self._profile_scope(source, username)
 
         async with conn.execute(
-            """
+            f"""
             SELECT
-                COUNT(DISTINCT game_id) as games_with_traps,
-                SUM(CASE WHEN match_type = 'sprung' AND user_was_victim = 1 THEN 1 ELSE 0 END) as total_sprung,
-                SUM(CASE WHEN match_type = 'entered' THEN 1 ELSE 0 END) as total_entered,
-                SUM(CASE WHEN match_type = 'executed' THEN 1 ELSE 0 END) as total_executed
-            FROM trap_matches
-            """
+                COUNT(DISTINCT tm.game_id) as games_with_traps,
+                SUM(CASE WHEN tm.match_type = 'sprung' AND tm.user_was_victim = 1 THEN 1 ELSE 0 END) as total_sprung,
+                SUM(CASE WHEN tm.match_type = 'entered' THEN 1 ELSE 0 END) as total_entered,
+                SUM(CASE WHEN tm.match_type = 'executed' THEN 1 ELSE 0 END) as total_executed
+            FROM trap_matches tm
+            JOIN game_index_cache g ON tm.game_id = g.game_id
+            {where_clause}
+            """,
+            params,
         ) as cursor:
             row = await cursor.fetchone()
 
         async with conn.execute(
-            """
-            SELECT trap_id, COUNT(*) as cnt
-            FROM trap_matches
-            WHERE match_type = 'sprung' AND user_was_victim = 1
-            GROUP BY trap_id
+            f"""
+            SELECT tm.trap_id, COUNT(*) as cnt
+            FROM trap_matches tm
+            JOIN game_index_cache g ON tm.game_id = g.game_id
+            {where_clause}
+            AND tm.match_type = 'sprung' AND tm.user_was_victim = 1
+            GROUP BY tm.trap_id
             ORDER BY cnt DESC
             LIMIT 3
-            """
+            """,
+            params,
         ) as cursor:
             top_rows = await cursor.fetchall()
 

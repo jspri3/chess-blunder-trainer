@@ -58,14 +58,16 @@ export function ImportSection({ demoMode, configuredUsernames, onImportStarted, 
   }, [maxGames]);
 
   const validateUsername = useCallback(async (src: string, uname: string) => {
-    if (!src || !uname) {
+    const trimmedSource = src.trim();
+    const trimmedUsername = uname.trim();
+    if (!trimmedSource || !trimmedUsername) {
       setUsernameValid(null);
       setValidationState('idle');
       return;
     }
     setValidationState('checking');
     try {
-      const result = await client.setup.validateUsername(src, uname);
+      const result = await client.setup.validateUsername(trimmedSource, trimmedUsername);
       setUsernameValid(result.valid);
       setValidationState(result.valid ? 'valid' : 'invalid');
     } catch {
@@ -80,11 +82,12 @@ export function ImportSection({ demoMode, configuredUsernames, onImportStarted, 
   );
 
   const handleSourceChange = (e: Event) => {
-    const val = (e.currentTarget as HTMLSelectElement).value;
+    const val = (e.currentTarget as HTMLSelectElement).value.trim();
     setSource(val);
     setUsernameValid(null);
-    if (username) {
-      debouncedValidate(val, username);
+    const trimmedUsername = username.trim();
+    if (trimmedUsername) {
+      debouncedValidate(val, trimmedUsername);
     }
   };
 
@@ -92,9 +95,10 @@ export function ImportSection({ demoMode, configuredUsernames, onImportStarted, 
     const val = (e.currentTarget as HTMLInputElement).value;
     setUsername(val);
     setUsernameValid(null);
-    if (val) {
+    const trimmed = val.trim();
+    if (trimmed) {
       setValidationState('checking');
-      debouncedValidate(source, val);
+      debouncedValidate(source, trimmed);
     } else {
       setValidationState('idle');
     }
@@ -121,12 +125,18 @@ export function ImportSection({ demoMode, configuredUsernames, onImportStarted, 
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
+    const trimmedSource = source.trim();
+    const trimmedUsername = username.trim();
+    setSource(trimmedSource);
+    setUsername(trimmedUsername);
 
-    if (usernameValid === null && source && username) {
+    let isUsernameValid = usernameValid;
+    if (isUsernameValid === null && trimmedSource && trimmedUsername) {
       setValidationState('checking');
       try {
-        const result = await client.setup.validateUsername(source, username);
-        setUsernameValid(result.valid);
+        const result = await client.setup.validateUsername(trimmedSource, trimmedUsername);
+        isUsernameValid = result.valid;
+        setUsernameValid(isUsernameValid);
         setValidationState(result.valid ? 'valid' : 'invalid');
       } catch {
         setUsernameValid(null);
@@ -134,13 +144,17 @@ export function ImportSection({ demoMode, configuredUsernames, onImportStarted, 
       }
     }
 
-    if (usernameValid === false) {
+    if (isUsernameValid === false) {
       setMessage({ type: 'error', text: t('setup.username_invalid') });
       return;
     }
 
     try {
-      const data = await client.jobs.startImport(source, username, parseInt(maxGames));
+      const data = await client.jobs.startImport(
+        trimmedSource,
+        trimmedUsername,
+        Number.parseInt(maxGames, 10),
+      );
       currentJobIdRef.current = data.job_id;
       onImportStarted(data.job_id);
       setImporting(true);

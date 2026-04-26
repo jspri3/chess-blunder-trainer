@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import Depends, Request
+from fastapi import Depends, Query, Request
 from fastapi.routing import APIRouter
 
 from blunder_tutor.analysis.traps import (
@@ -52,10 +52,21 @@ async def get_trap_catalog(request: Request) -> list[dict[str, Any]]:
 
 
 @traps_router.get("/api/traps/stats")
-@cached(tag="traps", ttl=300, version=1, key_params=[])
-async def get_trap_stats(request: Request, trap_repo: TrapRepoDep) -> dict[str, Any]:
-    stats = await trap_repo.get_trap_stats()
-    summary = await trap_repo.get_trap_summary()
+@cached(tag="traps", ttl=300, version=1, key_params=["source", "username"])
+async def get_trap_stats(
+    request: Request,
+    trap_repo: TrapRepoDep,
+    source: Annotated[
+        str | None,
+        Query(description="Filter by imported chess platform source"),
+    ] = None,
+    username: Annotated[
+        str | None,
+        Query(description="Filter by imported chess username"),
+    ] = None,
+) -> dict[str, Any]:
+    stats = await trap_repo.get_trap_stats(source=source, username=username)
+    summary = await trap_repo.get_trap_summary(source=source, username=username)
 
     db = get_trap_database()
     enriched = []
@@ -73,16 +84,26 @@ async def get_trap_stats(request: Request, trap_repo: TrapRepoDep) -> dict[str, 
 
 
 @traps_router.get("/api/traps/{trap_id}")
-@cached(tag="traps", ttl=300, version=1, key_params=["trap_id"])
+@cached(tag="traps", ttl=300, version=1, key_params=["trap_id", "source", "username"])
 async def get_trap_detail(
-    request: Request, trap_id: str, trap_repo: TrapRepoDep
+    request: Request,
+    trap_id: str,
+    trap_repo: TrapRepoDep,
+    source: Annotated[
+        str | None,
+        Query(description="Filter by imported chess platform source"),
+    ] = None,
+    username: Annotated[
+        str | None,
+        Query(description="Filter by imported chess username"),
+    ] = None,
 ) -> dict[str, Any]:
     db = get_trap_database()
     trap_def = db.get_trap(trap_id)
 
     catalog_info = _serialize_trap(trap_def) if trap_def else None
 
-    history = await trap_repo.get_trap_history(trap_id)
+    history = await trap_repo.get_trap_history(trap_id, source=source, username=username)
 
     for entry in history:
         pgn = entry.pop("pgn_content", None)

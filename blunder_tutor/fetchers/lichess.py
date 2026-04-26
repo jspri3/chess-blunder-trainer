@@ -41,6 +41,7 @@ async def fetch(
     batch_size: int = 200,
     progress_callback: Callable[[int, int], Awaitable[None]] | None = None,
 ) -> tuple[list[dict[str, object]], set[str]]:
+    username = username.strip()
     url = f"{LICHESS_BASE_URL}/api/games/user/{username}"
     headers = {"Accept": "application/x-chess-pgn", "User-Agent": USER_AGENT}
 
@@ -109,6 +110,7 @@ async def fetch(
 
 
 async def validate_username(username: str) -> bool:
+    username = username.strip()
     url = LICHESS_USER_URL.format(username=username)
     headers = {"User-Agent": USER_AGENT}
     async with httpx.AsyncClient(timeout=10, headers=headers) as client:

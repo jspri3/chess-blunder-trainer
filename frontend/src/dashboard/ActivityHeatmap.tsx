@@ -2,6 +2,8 @@ import { useState, useEffect } from 'preact/hooks';
 import { client } from '../shared/api';
 import type { HeatmapData } from './types';
 
+type QueryParams = Record<string, string | number | boolean | null | undefined | string[]>;
+
 const DAY_KEYS = [
   'common.day.sun', 'common.day.mon', 'common.day.tue', 'common.day.wed',
   'common.day.thu', 'common.day.fri', 'common.day.sat',
@@ -175,18 +177,24 @@ function HeatmapGrid({ data }: HeatmapGridProps) {
   );
 }
 
-export function ActivityHeatmap() {
+interface ActivityHeatmapProps {
+  params?: QueryParams;
+}
+
+export function ActivityHeatmap({ params }: ActivityHeatmapProps) {
   const [data, setData] = useState<HeatmapData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    client.stats.activityHeatmap().then(result => {
+    setData(null);
+    setError(null);
+    client.stats.activityHeatmap(365, params).then(result => {
       setData(result);
     }).catch((err: unknown) => {
       console.error('Failed to load heatmap:', err);
       setError(err instanceof Error ? err.message : String(err));
     });
-  }, []);
+  }, [params]);
 
   if (error !== null) {
     return <div class="heatmap-error">{t('heatmap.error')}</div>;

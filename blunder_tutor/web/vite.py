@@ -15,6 +15,7 @@ ENTRY_MAP = {
     "starred": "src/starred/index.tsx",
     "game-review": "src/game-review/index.tsx",
     "traps": "src/traps/index.tsx",
+    "profile-header": "src/profile-header/index.tsx",
     "auth-login": "src/auth/login.tsx",
     "auth-signup": "src/auth/signup.tsx",
     "auth-first-setup": "src/auth/first-setup.tsx",

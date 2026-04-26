@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'preact/hooks';
+import { useState, useCallback, useEffect } from 'preact/hooks';
 import { GAME_TYPES, GAME_PHASES, DIFFICULTIES } from '../../shared/constants';
 import { STORAGE_KEYS } from '../../shared/storage-keys';
 import { loadFromStorage } from '../../hooks/useFilterPersistence';
+import { loadSelectedProfile, onSelectedProfileChange } from '../../shared/profile-selection';
 
 export type QueryParams = Record<string, string | number | boolean | null | undefined | string[]>;
 
@@ -11,6 +12,8 @@ interface FilterState {
   difficulties: string[];
   tacticalPattern: string | null;
   color: string;
+  profileSource: string | null;
+  profileUsername: string | null;
   playFullLine: boolean;
   showCoordinates: boolean;
   showArrows: boolean;
@@ -70,12 +73,15 @@ export interface FiltersAPI {
 }
 
 export function useFilters(onFilterChange: () => void): FiltersAPI {
+  const initialProfile = loadSelectedProfile();
   const [state, setState] = useState<FilterState>(() => ({
     phases: loadFromStorage(SK.phases, DEFAULT_PHASES),
     gameTypes: loadFromStorage(SK.gameTypes, DEFAULT_GAME_TYPES),
     difficulties: loadFromStorage(SK.difficulties, DEFAULT_DIFFICULTIES),
     tacticalPattern: loadString(SK.tactical, '') || null,
     color: loadString(SK.color, 'both'),
+    profileSource: initialProfile.source,
+    profileUsername: initialProfile.username,
     playFullLine: loadBool(SK.playFullLine, false),
     showCoordinates: loadBool(SK.showCoordinates, true),
     showArrows: loadBool(SK.showArrows, true),
@@ -84,6 +90,16 @@ export function useFilters(onFilterChange: () => void): FiltersAPI {
     filtersCollapsed: loadBool(SK.filtersCollapsed, false),
     boardSettingsCollapsed: loadBool(SK.boardSettingsCollapsed, false),
   }));
+
+  useEffect(() => onSelectedProfileChange(profile => {
+    setState(s => {
+      if (s.profileSource === profile.source && s.profileUsername === profile.username) {
+        return s;
+      }
+      return { ...s, profileSource: profile.source, profileUsername: profile.username };
+    });
+    onFilterChange();
+  }), [onFilterChange]);
 
   const persist = useCallback((key: string, value: unknown) => {
     if (Array.isArray(value) || typeof value === 'object') {
@@ -181,8 +197,22 @@ export function useFilters(onFilterChange: () => void): FiltersAPI {
     if (state.color !== 'both') {
       params.colors = [state.color];
     }
+    if (state.profileSource) {
+      params.source = state.profileSource;
+    }
+    if (state.profileUsername) {
+      params.username = state.profileUsername;
+    }
     return params;
-  }, [state.phases, state.gameTypes, state.difficulties, state.tacticalPattern, state.color]);
+  }, [
+    state.phases,
+    state.gameTypes,
+    state.difficulties,
+    state.tacticalPattern,
+    state.color,
+    state.profileSource,
+    state.profileUsername,
+  ]);
 
   const activeFilterCount = useCallback((): number => {
     let count = 0;
@@ -192,7 +222,13 @@ export function useFilters(onFilterChange: () => void): FiltersAPI {
     if (state.tacticalPattern) count++;
     if (state.color !== 'both') count++;
     return count;
-  }, [state.phases, state.gameTypes, state.difficulties, state.tacticalPattern, state.color]);
+  }, [
+    state.phases,
+    state.gameTypes,
+    state.difficulties,
+    state.tacticalPattern,
+    state.color,
+  ]);
 
   const hasActiveFilters = useCallback((): boolean => activeFilterCount() > 0, [activeFilterCount]);
 

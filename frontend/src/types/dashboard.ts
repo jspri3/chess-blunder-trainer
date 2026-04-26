@@ -6,6 +6,8 @@ export interface DateFilterParams {
   end_date?: string;
   game_types?: string[];
   game_phases?: string[];
+  source?: string;
+  username?: string;
 }
 
 export type DatePreset = '7d' | '30d' | '90d' | '1y' | 'all';

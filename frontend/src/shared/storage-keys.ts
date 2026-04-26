@@ -2,6 +2,9 @@ export const STORAGE_KEYS = {
   // Theme
   theme: 'theme',
 
+  // Global chess profile selection
+  selectedProfile: 'blunder-tutor-selected-profile',
+
   // Trainer filters
   trainerPhases: 'blunder-tutor-phase-filters',
   trainerGameTypes: 'blunder-tutor-game-type-filters',
@@ -16,11 +19,13 @@ export const STORAGE_KEYS = {
   trainerShowThreats: 'blunder-tutor-show-threats',
   trainerShowTactics: 'blunder-tutor-show-tactics',
   trainerResultCardPos: 'blunder-tutor-result-card-pos',
+  trainerProfile: 'blunder-tutor-trainer-profile',
 
   // Dashboard filters
   dashboardDate: 'dashboard-date-filter',
   dashboardGameTypes: 'dashboard-game-type-filters',
   dashboardGamePhases: 'dashboard-game-phase-filters',
+  dashboardProfile: 'dashboard-profile-filter',
 
   // Import form
   importSource: 'blunder_import_source',

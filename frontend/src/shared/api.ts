@@ -4,6 +4,7 @@ import type {
   ReviewData, StarredItem,
   TrapCatalogEntry, TrapStatsResponse, TrapDetailData,
   SetupPayload,
+  ChessProfile,
 } from '../types/api';
 import type {
   OverviewData,
@@ -123,10 +124,11 @@ export const client = {
 
   stats: {
     overview: (params?: QueryParams) => request<OverviewData>(withQuery('/api/stats', params)),
-    gameBreakdown: () => request<{ items: GameBreakdownItem[] }>('/api/stats/games'),
+    gameBreakdown: (params?: QueryParams) => request<{ items: GameBreakdownItem[] }>(withQuery('/api/stats/games', params)),
     gamesByDate: (params?: QueryParams) => request<{ items: DateChartItem[] }>(withQuery('/api/stats/games/by-date', params)),
     gamesByHour: (params?: QueryParams) => request<{ items: HourChartItem[] }>(withQuery('/api/stats/games/by-hour', params)),
-    activityHeatmap: (days = 365) => request<HeatmapData>(`/api/stats/activity-heatmap?days=${String(days)}`),
+    activityHeatmap: (days = 365, params?: QueryParams) =>
+      request<HeatmapData>(withQuery('/api/stats/activity-heatmap', { ...params, days })),
     blundersByPhase: (params?: QueryParams) => request<PhaseData>(withQuery('/api/stats/blunders/by-phase', params)),
     blundersByColor: (params?: QueryParams) => request<ColorData>(withQuery('/api/stats/blunders/by-color', params)),
     blundersByGameType: (params?: QueryParams) => request<GameTypeData>(withQuery('/api/stats/blunders/by-game-type', params)),
@@ -171,6 +173,10 @@ export const client = {
     deleteStatus: () => request<JobStatus>('/api/data/delete-status'),
   },
 
+  profiles: {
+    list: () => request<{ items: ChessProfile[] }>('/api/profiles'),
+  },
+
   settings: {
     get: () => request<SyncSettings>('/api/settings'),
     save: (data: SyncSettings & { theme: ThemeColors }) => post('/api/settings', data),
@@ -188,8 +194,9 @@ export const client = {
 
   traps: {
     catalog: () => request<TrapCatalogEntry[]>('/api/traps/catalog'),
-    stats: () => request<TrapStatsResponse>('/api/traps/stats'),
-    detail: (trapId: string) => request<TrapDetailData>(`/api/traps/${trapId}`),
+    stats: (params?: QueryParams) => request<TrapStatsResponse>(withQuery('/api/traps/stats', params)),
+    detail: (trapId: string, params?: QueryParams) =>
+      request<TrapDetailData>(withQuery(`/api/traps/${trapId}`, params)),
   },
 
   trainer: {

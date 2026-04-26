@@ -12,6 +12,7 @@ from blunder_tutor.fetchers.validation import validate_username
 from blunder_tutor.web.api.schemas import ErrorResponse, SuccessResponse
 from blunder_tutor.web.dependencies import (
     EventBusDep,
+    GameRepoDep,
     JobServiceDep,
     SettingsRepoDep,
     UserContextDep,
@@ -86,6 +87,23 @@ class UsernamesResponse(BaseModel):
     )
     chesscom_username: str | None = Field(
         None, description="Configured Chess.com username"
+    )
+
+
+class ChessProfileItem(BaseModel):
+    source: str | None = Field(None, description="Imported game source")
+    username: str = Field(description="Imported chess username")
+    total_games: int = Field(description="Total imported games for this profile")
+    analyzed_games: int = Field(description="Analyzed games for this profile")
+    pending_games: int = Field(description="Games pending analysis for this profile")
+    oldest_game_date: str | None = Field(None, description="Oldest imported game date")
+    newest_game_date: str | None = Field(None, description="Newest imported game date")
+
+
+class ChessProfilesResponse(BaseModel):
+    items: list[ChessProfileItem] = Field(
+        default_factory=list,
+        description="Imported chess profiles available to select",
     )
 
 
@@ -219,6 +237,16 @@ async def get_usernames(settings_repo: SettingsRepoDep) -> dict[str, Any]:
         "lichess_username": usernames.get("lichess"),
         "chesscom_username": usernames.get("chesscom"),
     }
+
+
+@settings_router.get(
+    "/api/profiles",
+    response_model=ChessProfilesResponse,
+    summary="List imported chess profiles",
+    description="Return imported chess usernames grouped by platform for the active app account.",
+)
+async def list_chess_profiles(game_repo: GameRepoDep) -> dict[str, Any]:
+    return {"items": await game_repo.list_profiles()}
 
 
 @settings_router.get(

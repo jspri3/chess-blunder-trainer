@@ -53,6 +53,12 @@ async def _create_test_db(db_path):
             VALUES ('game2', 'lichess', 'player1', 'opponent2', 'player1', '1-0', '2025-01-02', 1)
             """
         )
+        await conn.execute(
+            """
+            INSERT INTO game_index_cache (game_id, source, username, white, black, result, date, analyzed)
+            VALUES ('game3', 'chesscom', 'player2', 'player2', 'opponent3', '1-0', '2025-01-03', 1)
+            """
+        )
         await conn.commit()
 
 
@@ -121,6 +127,30 @@ class TestTrapRepository:
         assert history[0]["game_id"] == "game1"
         assert history[0]["match_type"] == "sprung"
         assert history[0]["white"] == "player1"
+
+    async def test_get_trap_history_filters_by_profile(self, trap_repo):
+        await trap_repo.save_trap_match(
+            game_id="game1",
+            trap_id="scholars_mate",
+            match_type="sprung",
+            victim_side="black",
+            user_was_victim=True,
+            mistake_ply=6,
+        )
+        await trap_repo.save_trap_match(
+            game_id="game3",
+            trap_id="scholars_mate",
+            match_type="executed",
+            victim_side="black",
+            user_was_victim=False,
+            mistake_ply=None,
+        )
+
+        history = await trap_repo.get_trap_history(
+            "scholars_mate", source="chesscom", username="player2"
+        )
+
+        assert [row["game_id"] for row in history] == ["game3"]
 
     async def test_upsert_on_conflict(self, trap_repo):
         await trap_repo.save_trap_match(

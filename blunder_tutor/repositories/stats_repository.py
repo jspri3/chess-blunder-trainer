@@ -26,6 +26,8 @@ class StatsFilter:
     end_date: str | None = None
     game_types: list[int] | None = None
     game_phases: list[int] | None = None
+    source: str | None = None
+    username: str | None = None
 
     def append_to(
         self,
@@ -36,6 +38,12 @@ class StatsFilter:
         moves_alias: str = "am",
         include_phase: bool = True,
     ) -> str:
+        if self.source:
+            clause += f" AND {table_alias}.source = ?"
+            params.append(self.source)
+        if self.username:
+            clause += f" AND {table_alias}.username = ?"
+            params.append(self.username)
         if self.start_date:
             clause += f" AND {table_alias}.end_time_utc >= ?"
             params.append(self.start_date)
@@ -118,6 +126,7 @@ class StatsRepository(BaseDbRepository):
     async def get_game_breakdown(
         self,
         source: str | None = None,
+        username: str | None = None,
     ) -> list[dict[str, object]]:
         query = """
             SELECT
@@ -136,6 +145,10 @@ class StatsRepository(BaseDbRepository):
         if source:
             query += " AND source = ?"
             params.append(source)
+
+        if username:
+            query += " AND username = ?"
+            params.append(username)
 
         query += " GROUP BY source, username ORDER BY total_games DESC"
 

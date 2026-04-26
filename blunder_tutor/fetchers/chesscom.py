@@ -52,6 +52,7 @@ async def fetch(
     since: datetime | None = None,
     progress_callback: Callable[[int, int], Awaitable[None]] | None = None,
 ) -> tuple[list[dict[str, object]], set[str]]:
+    username = username.strip()
     api_username = username.lower()
     archives_url = f"{CHESSCOM_BASE_URL}/pub/player/{api_username}/games/archives"
 
@@ -117,6 +118,7 @@ async def fetch(
 
 
 async def validate_username(username: str) -> bool:
+    username = username.strip()
     url = CHESSCOM_USER_URL.format(username=username.lower())
     headers = {"User-Agent": USER_AGENT}
     async with httpx.AsyncClient(

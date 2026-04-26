@@ -61,10 +61,20 @@ async def start_import_job(
     event_bus: EventBusDep,
     user_ctx: UserContextDep,
 ) -> dict[str, str]:
+    username = payload.username.strip()
+    source = payload.source.strip().lower()
+
+    if source not in ("lichess", "chesscom"):
+        raise HTTPException(
+            status_code=400, detail="Platform must be 'lichess' or 'chesscom'"
+        )
+    if not username:
+        raise HTTPException(status_code=400, detail="Username is required")
+
     job_id = await job_service.create_job(
         job_type="import",
-        username=payload.username,
-        source=payload.source,
+        username=username,
+        source=source,
         max_games=payload.max_games,
     )
 
@@ -72,8 +82,8 @@ async def start_import_job(
         job_id=job_id,
         job_type="import",
         user_id=user_ctx.user_id,
-        source=payload.source,
-        username=payload.username,
+        source=source,
+        username=username,
         max_games=payload.max_games,
     )
     await event_bus.publish(event)

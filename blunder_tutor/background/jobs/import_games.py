@@ -36,8 +36,8 @@ class ImportGamesJob(BaseJob):
         self.event_bus = event_bus
 
     async def execute(self, job_id: str, **kwargs: Any) -> dict[str, Any]:
-        source = kwargs.get("source")
-        username = kwargs.get("username")
+        source = str(kwargs.get("source") or "").strip().lower()
+        username = str(kwargs.get("username") or "").strip()
 
         if not source:
             raise ValueError("source is required")

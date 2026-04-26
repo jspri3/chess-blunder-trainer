@@ -59,8 +59,10 @@ function TrainerCore(): preact.JSX.Element {
   const filtersRef = useRef<FiltersAPI | null>(null);
   const filtersApi = useFilters(useCallback(() => {
     setUserMoveUci(null);
-    const params = filtersRef.current?.getFilterParams();
-    void puzzleApi.loadPuzzle(params);
+    window.setTimeout(() => {
+      const params = filtersRef.current?.getFilterParams();
+      void puzzleApi.loadPuzzle(params);
+    }, 0);
   }, [puzzleApi]));
   filtersRef.current = filtersApi;
 

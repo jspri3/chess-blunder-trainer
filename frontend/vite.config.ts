@@ -25,6 +25,7 @@ export default defineConfig({
         starred: resolve(__dirname, 'src/starred/index.tsx'),
         'game-review': resolve(__dirname, 'src/game-review/index.tsx'),
         traps: resolve(__dirname, 'src/traps/index.tsx'),
+        'profile-header': resolve(__dirname, 'src/profile-header/index.tsx'),
         'auth-login': resolve(__dirname, 'src/auth/login.tsx'),
         'auth-signup': resolve(__dirname, 'src/auth/signup.tsx'),
         'auth-first-setup': resolve(__dirname, 'src/auth/first-setup.tsx'),

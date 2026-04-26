@@ -123,7 +123,7 @@ export function DashboardApp() {
       const [overview, analysisStatus, gameBreakdownResp] = await Promise.all([
         client.stats.overview(qp),
         client.analysis.status(),
-        client.stats.gameBreakdown(),
+        client.stats.gameBreakdown(qp),
       ]);
 
       const [
@@ -149,7 +149,7 @@ export function DashboardApp() {
         hasTactical ? client.stats.blundersByTacticalPattern(qp) : Promise.resolve(null),
         hasCollapse ? client.stats.collapsePoint(qp) : Promise.resolve(null),
         hasConversion ? client.stats.conversionResilience(qp) : Promise.resolve(null),
-        hasTraps ? client.traps.stats() : Promise.resolve(null),
+        hasTraps ? client.traps.stats(qp) : Promise.resolve(null),
       ] as const);
 
       if (controller.signal.aborted) return;
@@ -309,7 +309,7 @@ export function DashboardApp() {
           title={t('dashboard.chart.puzzle_activity')}
           description={t('dashboard.chart.puzzle_activity_desc')}
         >
-          <ActivityHeatmap />
+          <ActivityHeatmap params={toQueryParams(getParams())} />
         </BreakdownSection>
       )}
 

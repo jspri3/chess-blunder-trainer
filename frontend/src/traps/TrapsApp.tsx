@@ -2,6 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import { client } from '../shared/api';
 import { Dropdown } from '../components/Dropdown';
 import SequencePlayer from '../shared/sequence-player';
+import {
+  loadSelectedProfile,
+  onSelectedProfileChange,
+  selectedProfileParams,
+  type SelectedProfile,
+} from '../shared/profile-selection';
 import type {
   TrapStat, TrapSummary, TrapCatalogEntry,
   TrapDetail, TrapDetailData,
@@ -47,10 +53,11 @@ function BoardPlayer({ trap, activeTab }: BoardPlayerProps) {
 interface DetailPanelProps {
   trapId: string;
   catalog: Record<string, TrapCatalogEntry>;
+  profile: SelectedProfile;
   onClose: () => void;
 }
 
-function DetailPanel({ trapId, catalog, onClose }: DetailPanelProps) {
+function DetailPanel({ trapId, catalog, profile, onClose }: DetailPanelProps) {
   const [detail, setDetail] = useState<TrapDetailData | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('trap');
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +69,7 @@ function DetailPanel({ trapId, catalog, onClose }: DetailPanelProps) {
     setError(null);
     setActiveTab('trap');
 
-    client.traps.detail(trapId)
+    client.traps.detail(trapId, selectedProfileParams(profile))
       .then(resp => {
         setDetail({ trap: resp.trap, history: resp.history });
       })
@@ -70,7 +77,7 @@ function DetailPanel({ trapId, catalog, onClose }: DetailPanelProps) {
         console.error('Failed to load trap detail:', err);
         setError(t('common.error'));
       });
-  }, [trapId]);
+  }, [trapId, profile]);
 
   useEffect(() => {
     const panel = document.getElementById('trapDetailPanel');
@@ -214,11 +221,13 @@ export function TrapsApp() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedTrapId, setSelectedTrapId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<SelectedProfile>(loadSelectedProfile);
 
   const loadData = useCallback(async () => {
     try {
+      const params = selectedProfileParams(profile);
       const [statsResp, catalogResp] = await Promise.all([
-        client.traps.stats(),
+        client.traps.stats(params),
         client.traps.catalog(),
       ]);
 
@@ -232,11 +241,19 @@ export function TrapsApp() {
       console.error('Failed to load trap data:', err);
       setError(t('common.error'));
     }
-  }, []);
+  }, [profile]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useEffect(() => onSelectedProfileChange(next => {
+    setProfile(next);
+    setSelectedTrapId(null);
+    setStats(null);
+    setSummary(null);
+    setError(null);
+  }), []);
 
   const categoryOptions = CATEGORIES.map(cat => ({
     value: cat,
@@ -316,6 +333,7 @@ export function TrapsApp() {
         <DetailPanel
           trapId={selectedTrapId}
           catalog={catalog}
+          profile={profile}
           onClose={() => { setSelectedTrapId(null); }}
         />
       )}
