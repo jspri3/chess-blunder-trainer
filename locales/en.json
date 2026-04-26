@@ -619,6 +619,7 @@
   "trainer.shortcuts.next": "Next puzzle",
   "trainer.shortcuts.play_best": "Play best move on board",
   "trainer.shortcuts.reset": "Reset position",
+  "trainer.shortcuts.hide_best": "Hide best move",
   "trainer.shortcuts.show_best": "Show best move",
   "trainer.shortcuts.show_help": "Show this help",
   "trainer.shortcuts.submit": "Submit move",

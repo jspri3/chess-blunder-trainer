@@ -613,6 +613,7 @@
   "trainer.shortcuts.next": "下一道题",
   "trainer.shortcuts.play_best": "在棋盘上走出最佳走法",
   "trainer.shortcuts.reset": "重置局面",
+  "trainer.shortcuts.hide_best": "隐藏最佳走法",
   "trainer.shortcuts.show_best": "显示最佳走法",
   "trainer.shortcuts.show_help": "显示此帮助",
   "trainer.shortcuts.submit": "提交走法",

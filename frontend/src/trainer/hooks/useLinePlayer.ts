@@ -7,6 +7,7 @@ export function useLinePlayer(
 ): {
   playBestMove: () => void;
   navigateLine: (direction: 'forward' | 'back') => void;
+  stopLinePlayback: () => void;
 } {
   const { state, dispatch } = useContext(TrainerContext);
   const animGenRef = useRef(0);
@@ -86,5 +87,10 @@ export function useLinePlayer(
     gameRef.current = game;
   }, [state.animating, state.linePositions, state.lineViewIndex, dispatch, gameRef]);
 
-  return { playBestMove, navigateLine };
+  const stopLinePlayback = useCallback(() => {
+    animGenRef.current += 1;
+    dispatch({ type: 'SET_ANIMATING', animating: false });
+  }, [dispatch]);
+
+  return { playBestMove, navigateLine, stopLinePlayback };
 }

@@ -613,6 +613,7 @@
   "trainer.shortcuts.next": "Siguiente puzzle",
   "trainer.shortcuts.play_best": "Jugar mejor jugada en el tablero",
   "trainer.shortcuts.reset": "Reiniciar posición",
+  "trainer.shortcuts.hide_best": "Ocultar mejor jugada",
   "trainer.shortcuts.show_best": "Mostrar mejor jugada",
   "trainer.shortcuts.show_help": "Mostrar esta ayuda",
   "trainer.shortcuts.submit": "Enviar jugada",

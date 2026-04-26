@@ -40,6 +40,7 @@ export type TrainerAction =
   | { type: 'RESET_FOR_NEW_PUZZLE' }
   | { type: 'SET_SUBMITTED' }
   | { type: 'REVEAL_BEST' }
+  | { type: 'HIDE_BEST' }
   | { type: 'PUSH_MOVE'; san: string }
   | { type: 'POP_MOVE' }
   | { type: 'SET_LOADING'; loading: boolean }
@@ -117,6 +118,16 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
       return { ...state, submitted: true };
     case 'REVEAL_BEST':
       return { ...state, bestRevealed: true };
+    case 'HIDE_BEST':
+      return {
+        ...state,
+        bestRevealed: false,
+        resultVisible: false,
+        feedbackType: null,
+        moveHistory: [],
+        linePositions: [],
+        lineViewIndex: -1,
+      };
     case 'PUSH_MOVE':
       return { ...state, moveHistory: [...state.moveHistory, action.san] };
     case 'POP_MOVE':
@@ -136,7 +147,7 @@ export function trainerReducer(state: TrainerState, action: TrainerAction): Trai
     case 'SET_LINE_VIEW_INDEX':
       return { ...state, lineViewIndex: action.index };
     case 'CLEAR_LINE_NAVIGATION':
-      return { ...state, linePositions: [], lineViewIndex: -1 };
+      return { ...state, linePositions: [], lineViewIndex: -1, moveHistory: [] };
     case 'SET_ANIMATING':
       return { ...state, animating: action.animating };
     case 'SET_EMPTY_STATE':

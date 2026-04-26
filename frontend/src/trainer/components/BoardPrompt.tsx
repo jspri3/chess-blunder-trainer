@@ -6,7 +6,7 @@ interface BoardPromptProps {
 }
 
 export function BoardPrompt({ submitted, bestRevealed, submitting, hasPuzzle }: BoardPromptProps): preact.JSX.Element | null {
-  if (!hasPuzzle || bestRevealed) return null;
+  if (!hasPuzzle || bestRevealed || submitted) return null;
 
   if (submitting) {
     return (
@@ -20,7 +20,7 @@ export function BoardPrompt({ submitted, bestRevealed, submitting, hasPuzzle }: 
 
   return (
     <div class="board-prompt" id="movePrompt">
-      <div class="section-title">{!submitted && t('trainer.prompt.make_better')}</div>
+      <div class="section-title">{t('trainer.prompt.make_better')}</div>
     </div>
   );
 }

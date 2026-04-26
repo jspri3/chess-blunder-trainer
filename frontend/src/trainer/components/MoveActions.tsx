@@ -31,11 +31,18 @@ export function MoveActions({
           <kbd>R</kbd><span class="action-label">{t('trainer.shortcuts.reset')}</span>
         </button>
 
-        {!bestRevealed && (
-          <button class="action-key" id="showBestBtn" onClick={onReveal} disabled={submitting}>
-            <kbd>B</kbd><span class="action-label">{t('trainer.shortcuts.show_best')}</span>
-          </button>
-        )}
+        <button
+          class={`action-key ${bestRevealed ? 'active' : ''}`}
+          id="showBestBtn"
+          onClick={onReveal}
+          disabled={submitting}
+          aria-pressed={bestRevealed}
+        >
+          <kbd>B</kbd>
+          <span class="action-label">
+            {bestRevealed ? t('trainer.shortcuts.hide_best') : t('trainer.shortcuts.show_best')}
+          </span>
+        </button>
 
         <button class="action-key" id="nextBtn" onClick={onNext}>
           <kbd>N</kbd><span class="action-label">{t('trainer.shortcuts.next')}</span>

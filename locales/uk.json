@@ -613,6 +613,7 @@
   "trainer.shortcuts.next": "Наступна задача",
   "trainer.shortcuts.play_best": "Зіграти найкращий хід на дошці",
   "trainer.shortcuts.reset": "Скинути позицію",
+  "trainer.shortcuts.hide_best": "Сховати найкращий хід",
   "trainer.shortcuts.show_best": "Показати найкращий хід",
   "trainer.shortcuts.show_help": "Показати цю довідку",
   "trainer.shortcuts.submit": "Надіслати хід",

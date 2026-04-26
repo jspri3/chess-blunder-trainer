@@ -667,6 +667,16 @@
   color: var(--white);
 }
 
+.action-key#showBestBtn.active {
+  color: var(--black);
+}
+
+.action-key#showBestBtn.active kbd {
+  background: var(--black);
+  border-color: var(--black);
+  color: var(--white);
+}
+
 /* Next — yellow key */
 .action-key#nextBtn kbd {
   background: var(--yellow);

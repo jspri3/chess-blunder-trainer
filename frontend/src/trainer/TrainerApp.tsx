@@ -67,7 +67,7 @@ function TrainerCore(): preact.JSX.Element {
   filtersRef.current = filtersApi;
 
   // Line player
-  const { playBestMove, navigateLine } = useLinePlayer(gameRef, filtersApi.state.playFullLine);
+  const { playBestMove, navigateLine, stopLinePlayback } = useLinePlayer(gameRef, filtersApi.state.playFullLine);
 
   // WebSocket for stats updates
   const ws = useWebSocket(['stats.updated']);
@@ -176,27 +176,35 @@ function TrainerCore(): preact.JSX.Element {
   // Reveal best move
   const handleReveal = useCallback(() => {
     if (state.bestRevealed) {
-      dispatch({ type: 'SET_RESULT_VISIBLE', visible: !state.resultVisible });
+      const puzzle = state.puzzle;
+      if (puzzle) {
+        stopLinePlayback();
+        setUserMoveUci(null);
+        gameRef.current = new Chess(puzzle.fen);
+        dispatch({ type: 'SET_FEN', fen: puzzle.fen });
+      }
+      dispatch({ type: 'HIDE_BEST' });
     } else {
       setFeedbackTitle(t('trainer.feedback.best_revealed'));
       setFeedbackDetail(t('trainer.feedback.best_revealed_detail'));
       dispatch({ type: 'REVEAL_BEST' });
       dispatch({ type: 'SET_RESULT_VISIBLE', visible: true });
     }
-  }, [state.bestRevealed, state.resultVisible, dispatch]);
+  }, [state.bestRevealed, state.puzzle, stopLinePlayback, dispatch]);
 
   // Reset position
   const handleReset = useCallback(() => {
-    if (state.animating) return;
     const puzzle = state.puzzle;
     if (!puzzle) return;
+    stopLinePlayback();
+    setUserMoveUci(null);
     gameRef.current = new Chess(puzzle.fen);
     dispatch({ type: 'SET_FEN', fen: puzzle.fen });
     dispatch({ type: 'CLEAR_LINE_NAVIGATION' });
     if (!state.bestRevealed) {
       dispatch({ type: 'SET_RESULT_VISIBLE', visible: false });
     }
-  }, [state.animating, state.puzzle, state.bestRevealed, dispatch]);
+  }, [state.puzzle, state.bestRevealed, stopLinePlayback, dispatch]);
 
   // Undo
   const handleUndo = useCallback(() => {

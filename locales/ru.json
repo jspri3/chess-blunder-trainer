@@ -613,6 +613,7 @@
   "trainer.shortcuts.next": "Следующая задача",
   "trainer.shortcuts.play_best": "Сыграть лучший ход на доске",
   "trainer.shortcuts.reset": "Сбросить позицию",
+  "trainer.shortcuts.hide_best": "Скрыть лучший ход",
   "trainer.shortcuts.show_best": "Показать лучший ход",
   "trainer.shortcuts.show_help": "Показать справку",
   "trainer.shortcuts.submit": "Отправить ход",

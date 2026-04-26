@@ -31,6 +31,26 @@ describe('trainerReducer', () => {
     expect(state.bestRevealed).toBe(true);
   });
 
+  it('hides revealed best move and clears line state', () => {
+    const dirty = {
+      ...initialState,
+      bestRevealed: true,
+      resultVisible: true,
+      feedbackType: 'not-quite' as const,
+      moveHistory: ['d4'],
+      linePositions: [{ fen: 'some-fen', moveHistory: ['d4'] }],
+      lineViewIndex: 0,
+    };
+    const state = trainerReducer(dirty, { type: 'HIDE_BEST' });
+
+    expect(state.bestRevealed).toBe(false);
+    expect(state.resultVisible).toBe(false);
+    expect(state.feedbackType).toBeNull();
+    expect(state.moveHistory).toEqual([]);
+    expect(state.linePositions).toEqual([]);
+    expect(state.lineViewIndex).toBe(-1);
+  });
+
   it('pushes move to history', () => {
     const s1 = trainerReducer(initialState, { type: 'PUSH_MOVE', san: 'e4' });
     expect(s1.moveHistory).toEqual(['e4']);
@@ -91,13 +111,17 @@ describe('trainerReducer', () => {
 
   it('manages line positions', () => {
     const pos = { fen: 'some-fen', moveHistory: ['e4'] };
-    const s1 = trainerReducer(initialState, { type: 'PUSH_LINE_POSITION', position: pos });
+    const s1 = trainerReducer(
+      { ...initialState, moveHistory: ['e4'] },
+      { type: 'PUSH_LINE_POSITION', position: pos },
+    );
     expect(s1.linePositions).toEqual([pos]);
     const s2 = trainerReducer(s1, { type: 'SET_LINE_VIEW_INDEX', index: 0 });
     expect(s2.lineViewIndex).toBe(0);
     const s3 = trainerReducer(s2, { type: 'CLEAR_LINE_NAVIGATION' });
     expect(s3.linePositions).toEqual([]);
     expect(s3.lineViewIndex).toBe(-1);
+    expect(s3.moveHistory).toEqual([]);
   });
 
   it('sets animating flag', () => {
