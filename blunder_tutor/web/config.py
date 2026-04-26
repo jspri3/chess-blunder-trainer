@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import typing
 from pathlib import Path
 
@@ -51,6 +52,9 @@ def get_engine_path(environ: typing.Mapping) -> str:
     engine_path = environ.get("STOCKFISH_BINARY")
     if engine_path is not None:
         return engine_path
+    path_engine = shutil.which("stockfish") or shutil.which("stockfish.exe")
+    if path_engine is not None:
+        return path_engine
     for path in (
         "/usr/games/stockfish",
         "/usr/local/bin/stockfish",

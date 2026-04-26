@@ -70,7 +70,7 @@ make install-dev    # Install dependencies
 make test           # Run tests
 make lint           # Check code style
 make fix            # Auto-fix formatting
-make train-ui       # Start on localhost:8000
+npm run dev         # Start frontend + backend on localhost:8000
 
 # E2E tests (requires npm ci in e2e/)
 cd e2e && npx playwright test

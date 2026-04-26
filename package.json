@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --config frontend/vite.config.ts",
+    "dev": "node scripts/dev-app.mjs",
+    "dev:vite": "vite --config frontend/vite.config.ts",
     "build": "tsc --noEmit --project frontend/tsconfig.json && vite build --config frontend/vite.config.ts",
     "typecheck": "tsc --noEmit --project frontend/tsconfig.json",
     "lint": "eslint --config frontend/eslint.config.ts frontend/src/ frontend/tests/",

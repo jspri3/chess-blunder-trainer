@@ -21,6 +21,9 @@ wheels/
 node_modules/
 .DS_Store
 
+# Local dev tools downloaded by scripts/dev-app.mjs
+.dev-tools/
+
 # Dolt database files (added by bd init)
 .dolt/
 
